@@ -1,0 +1,5 @@
+.idea
+.coverage
+.tox
+htmlcov
+*.py[cod]

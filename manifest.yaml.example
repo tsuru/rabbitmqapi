@@ -1,0 +1,5 @@
+id: rabbitmqapi
+username: tsuru
+password: tsuru
+endpoint:
+  production: rabbitmqapi.example.com

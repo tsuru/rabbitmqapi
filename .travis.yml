@@ -1,0 +1,8 @@
+language: python
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install `cat requirements.apt` -qq
+install:
+  - pip install -qr requirements-test.txt
+script:
+  - python -m rabbitmqapi.tests
