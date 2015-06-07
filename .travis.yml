@@ -5,4 +5,6 @@ before_install:
 install:
   - pip install -qr requirements-test.txt
 script:
-  - python -m rabbitmqapi.tests
+  - coverage run -m rabbitmqapi.tests
+after_success:
+  coveralls
