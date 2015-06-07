@@ -1,5 +1,7 @@
 # tsuru-rabbitmqapi
 
+[![Build Status](https://travis-ci.org/qdqmedia/rabbitmqapi.png?branch=master)](https://travis-ci.org/qdqmedia/rabbitmqapi)
+
 This API exposes a [RabbitMQ](https://www.rabbitmq.com) service to application developers using [Tsuru](https://tsuru.io) PaaS.
 
 Please note that you need a working Tsuru installation in order to use this software. Installation of Tsuru itself is not covered here.
