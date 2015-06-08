@@ -14,7 +14,7 @@ from werkzeug.exceptions import InternalServerError
 
 
 from . import create_app
-from .api import log_request
+from .api import log_request, ha_policy_name
 from .http_client import send
 from .auth import requires_auth
 from .utils import generate_username, generate_password
@@ -186,13 +186,92 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data, b'Error, missing name argument')
 
+        #
+        # Test correct creation of a Vhost in HA
+        #
         responses.add(
             responses.PUT,
             '{}/vhosts/foobar'.format(self.rmq_base_url),
             status=200,
         )
+
+        responses.add(
+            responses.PUT,
+            '{base_url}/permissions/foobar/{username}'.format(
+                base_url=self.rmq_base_url, username=app.config['RMQ_USER']),
+            status=200,
+        )
+
+        responses.add(
+            responses.PUT,
+            '{base_url}/policies/foobar/{policy_name}'.format(
+                base_url=self.rmq_base_url, policy_name=ha_policy_name),
+            status=200,
+        )
+
         response = self.app.post('/resources', data={'name': 'foobar'}, headers=self.auth_headers)
         self.assertEqual(response.status_code, 201)
+        responses.reset()
+
+        #
+        # Test Rollback when creating a vhost, adding an admin fails to that vhost
+        #
+        responses.add(
+            responses.PUT,
+            '{}/vhosts/foobar'.format(self.rmq_base_url),
+            status=200,
+        )
+
+        responses.add(
+            responses.PUT,
+            '{base_url}/permissions/foobar/{username}'.format(
+                base_url=self.rmq_base_url, username=app.config['RMQ_USER']),
+            status=400,
+        )
+
+        responses.add(
+            responses.DELETE,
+            '{}/vhosts/foobar'.format(self.rmq_base_url),
+            status=200,
+        )
+
+        response = self.app.post('/resources', data={'name': 'foobar'}, headers=self.auth_headers)
+        self.assertEqual(response.status_code, 500)
+        self.assertTrue('Error, rabbitmq returned status code 400' in response.get_data(as_text=True))
+        responses.reset()
+
+        #
+        # Test Rollback when creating a vhost, adding HA policy fails
+        #
+        responses.add(
+            responses.PUT,
+            '{}/vhosts/foobar'.format(self.rmq_base_url),
+            status=200,
+        )
+
+        responses.add(
+            responses.PUT,
+            '{base_url}/permissions/foobar/{username}'.format(
+                base_url=self.rmq_base_url, username=app.config['RMQ_USER']),
+            status=200,
+        )
+
+        responses.add(
+            responses.PUT,
+            '{base_url}/policies/foobar/{policy_name}'.format(
+                base_url=self.rmq_base_url, policy_name=ha_policy_name),
+            status=400,
+        )
+
+        responses.add(
+            responses.DELETE,
+            '{}/vhosts/foobar'.format(self.rmq_base_url),
+            status=200,
+        )
+
+        response = self.app.post('/resources', data={'name': 'foobar'}, headers=self.auth_headers)
+        self.assertEqual(response.status_code, 500)
+        self.assertTrue('Error, rabbitmq returned status code 400' in response.get_data(as_text=True))
 
     @responses.activate
     def test_delete_instance(self):
