@@ -12,6 +12,22 @@ from .utils import generate_username, generate_password
 api = Blueprint('api', __name__)
 
 #
+# Policies to allow high availability
+#
+ha_policy_name = "ha-queues"
+ha_policy = {
+    "vhost": None,
+    "name": ha_policy_name,
+    "pattern": "",
+    "apply-to": "all",
+    "definition": {
+        "ha-mode": "all",
+        "ha-sync-mode": "automatic"
+    },
+    "priority": 0
+}
+
+#
 # User permissions
 #
 full_permissions = {"configure": ".*", "write": ".*", "read": ".*"}
@@ -37,6 +53,29 @@ def add_instance():
         return 'Error, missing name argument', 400
 
     send('put', 'vhosts/{name}'.format(name=request.form['name']))
+
+    # Grant access in vhost to admin
+    status = send('put', 'permissions/{instance_name}/{username}'.format(
+        username=current_app.config['RMQ_USER'],
+        instance_name=request.form['name']),
+        data=json.dumps(full_permissions),
+        raise_for_status=False)
+
+    if not status.ok:
+        send('delete', 'vhosts/{name}'.format(name=request.form['name']))
+        return abort(500, 'Error, rabbitmq returned status code {}'.format(status.status_code))
+
+    # add automatic policies for HA
+    ha_policy['vhost'] = request.form['name']
+    status = send('put', 'policies/{name}/{policy_name}'.format(
+        name=request.form['name'],
+        policy_name=ha_policy_name
+        ), data=json.dumps(ha_policy), raise_for_status=False)
+
+    if not status.ok:
+        send('delete', 'vhosts/{name}'.format(name=request.form['name']))
+        return abort(500, 'Error, rabbitmq returned status code {}'.format(status.status_code))
+
     return '', 201
 
 
