@@ -1,6 +1,7 @@
 # tsuru-rabbitmqapi
 
 [![Build Status](https://travis-ci.org/tsuru/rabbitmqapi.svg?branch=master)](https://travis-ci.org/tsuru/rabbitmqapi)
+[![Coverage Status](https://coveralls.io/repos/tsuru/rabbitmqapi/badge.svg?branch=master)](https://coveralls.io/r/tsuru/rabbitmqapi?branch=master)
 
 This API exposes a [RabbitMQ](https://www.rabbitmq.com) service to application developers using [Tsuru](https://tsuru.io) PaaS.
 
