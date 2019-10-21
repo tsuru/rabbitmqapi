@@ -124,7 +124,7 @@ curl -utsuru:$TSURU_SERVICE_PASSWORD -XPOST -d "name=testservice" http://localho
 ```
 
 * Delete it
-````bash
+```bash
 curl -utsuru:$TSURU_SERVICE_PASSWORD -XDELETE http://localhost:5000/resources/testservice
 ```
 
